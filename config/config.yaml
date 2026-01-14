@@ -1,0 +1,6 @@
+genome_release: GRCh38
+name: bla
+preprocessing:
+    input: /path/to/file.xyz
+metrics:
+    input: /path/to/file.tsv

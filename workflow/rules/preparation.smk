@@ -2,7 +2,7 @@ import glob
 
 rule txtToCsv:
     input:
-        lambda wildcards: sorted(glob.glob("files/initial_file/*.txt"))[0]
+        lambda wildcards: sorted(glob.glob("files/initial_file/*.csv"))[0]
     output:
         "files/preparation/variant_summary.csv.gz"
     shell:
@@ -34,7 +34,7 @@ rule filter_variants_Clinical_Significance:
 
 rule filter_variants_Genome_Release:
     input:
-        "files/preparation/filtered_variant_summary.csv.gz"
+        "files/preparation/filtered_CS_variant_summary.csv.gz"
     output:
         "files/preparation/{genome_release}_GR_variant_summary.csv.gz"
     params:
@@ -69,18 +69,7 @@ rule csv_to_vcf:
         python scripts/csv_to_vcf.py {input} {output}
         """
 
-rule filter_variants_CS:
-    input:
-        "files/preparation/{genome_release}_GR_variant_summary.csv.gz"
-    output:
-        "files/preparation/{genome_release}_CS_variant_summary.csv.gz"
-    shell:
-        """
-        python scripts/filter_variants_CS.py {input} {output}.tmp
-        gzip -c {output}.tmp > {output}
-        rm {output}.tmp
-        """
-
+# optional
 rule specific_attributes:
     input:
         "files/preparation/{genome_release}_CS_variant_summary.csv.gz"

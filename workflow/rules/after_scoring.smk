@@ -21,10 +21,11 @@ rule tsvToCsv:
     shell:
         "python Kreidefelsen/scripts/txtToCsv.py {input} {output}"
 
+# maybe change input
 rule merge_csv_tables:
     input:
         "files/scored/{cadd_version}_{genome_release}_Score.csv.gz",
-        "files/preperation/{genome_release}_vs_specific_attributes.csv.gz"
+        "files/preparation/{genome_release}_vs_specific_attributes.csv.gz"
     output:
         "files/full_tables/{cadd_version}_{genome_release}_full_table.csv.gz"
     shell:
