@@ -17,3 +17,47 @@
 
 - now metrics and pre-metric files can be used for the website
 
+
+# Example using clinvar
+
+downnload clinvar
+
+```bash
+wget bla bla -O "files/clinvar.csv.gz"
+```
+
+preprocess clinvar to select only two starr review status and GRCh38
+
+
+
+```bash
+
+gzip -dc resources/initial_file/variant_summary.txt.gz \
+| awk -F'\t' -v OFS='\t' '
+NR==1 {
+  for(i=1;i<=NF;i++){
+    h=$i; gsub(/^"|"$/,"",h)
+    if(h=="Chromosome") $i="CHROM"
+    if(h=="PositionVCF") $i="POS"
+    if(h=="ReferenceAlleleVCF") $i="REF"
+    if(h=="AlternateAlleleVCF") $i="ALT"
+  }
+  print; next
+}
+{ print }
+' \
+| gzip -c > resources/initial_file/variant_summary_renamed.csv.gz
+
+```
+```bash
+
+gzip -dc resources/initial_file/variant_summary_renamed.csv.gz \
+| mlr --tsv filter 'tolower($ReviewStatus) =~ "criteria provided, multiple submitters, no conflicts|reviewed by expert panel|practice guideline" && (tolower($ClinicalSignificance) =~ "pathogenic" || tolower($ClinicalSignificance) =~ "benign")' \
+| tee >(mlr --tsv filter '$Assembly=="GRCh38"' | gzip -c > resources/initial_file/variant_summary_GRCh38.csv.gz) \
+      >(mlr --tsv filter '$Assembly=="GRCh37"' | gzip -c > resources/initial_file/variant_summary_GRCh37.csv.gz) \
+| gzip -c > resources/initial_file/variant_summary_filtered_master.csv.gz
+
+
+```
+
+

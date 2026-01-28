@@ -1,12 +1,23 @@
+include: "rules/common.smk"
+include: "rules/preparation.smk"
+include: "rules/metrics.smk"
+include: "rules/after_scoring.smk"
+
+
 rule all:
     input:
-        expand("results/peprocessing/{name}.vcf.gz", name=config["name"]) if "preprocessing" in config else None,
-        expand("results/metrics/{name}.csv.gz", name=config["name"]) if "metrics" in config else None,
+        # build a single list of file paths; avoid inserting `None` values
+        (expand("results/preprocessing/{name}.vcf.gz", name=[config["name"]]) if "preprocessing" in config else []) +
+        expand("results/preprocessing/splits/{name}.split.done", name=[config["name"]]) +
+        (expand("results/metrics/{name}.csv.gz", name=[config["name"]]) if "metrics" in config else [])
+
 
 rule all_metrics:
     input:
-        expand("results/metrics/{name}.csv.gz", name=config["name"])
+        expand("results/metrics/{name}.csv.gz", name=config["name"]),
+
 
 rule all_preprocessing:
     input:
-        expand("results/peprocessing/{name}.vcf.gz", name=config["name"])
+        #expand("results/preprocessing/{name}.vcf.gz", name=config["name"]),
+        expand("results/preprocessing/splits/{name}.split.done", name=config["name"]),

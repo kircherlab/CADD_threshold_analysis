@@ -1,11 +1,3 @@
-genome_releases:
-  - "GRCh37"
-  - "GRCh38"
-cadd_versions:
-  - "1.6"
-  - "1.7"
-name: bla
-preprocessing:
-    input: /path/to/file.xyz
-metrics:
-    input: /path/to/file.tsv
+name: variant_summary_GRCh38
+preprocessing_input: resources/initial_file/variant_summary_GRCh38.csv.gz
+metrics_input: /path/to/file.tsv

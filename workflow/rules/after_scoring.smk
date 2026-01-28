@@ -1,36 +1,40 @@
-def find_tsv_files(wildcards):
-    import glob
-    return glob.glob(f"scored_data/{wildcards.cadd_version}_{wildcards.genome_release}_zip/*.tsv.gz")
+
 
 rule merge_tsv_files:
     input:
-        lambda wildcards: find_tsv_files(wildcards) or sys.exit(f"Error: No TSV files found in scored_data/{wildcards.cadd_version}_{wildcards.genome_release}_zip/")
+        tsvs=lambda wildcards: after_scoring_find_tsv_files(wildcards)
+        or sys.exit(f"Error: No TSV files found in scored_data/{wildcards.name}/"),
+        script=getScript("merge_tsv_files.py"),
     output:
-        "files/scored/{cadd_version}_{genome_release}_Score.tsv.gz"
+        "results/scored/{cadd_version}_{genome_release}_Score.tsv.gz",
     shell:
         """
-        python Kreidefelsen/scripts/merge_tsv_files.py {input} {output}.tmp
+        python {input.script} {input.tsvs} {output}.tmp
         gzip -c {output}.tmp > {output}
         rm {output}.tmp
         """
+
+
 rule tsvToCsv:
     input:
-        "files/scored/{cadd_version}_{genome_release}_Score.tsv.gz"
+        score="results/scored/{cadd_version}_{genome_release}_Score.tsv.gz",
+        script=getScript("txtToCsv.py"),
     output:
-        "files/scored/{cadd_version}_{genome_release}_Score.csv.gz"
+        "results/scored/{cadd_version}_{genome_release}_Score.csv.gz",
     shell:
-        "python Kreidefelsen/scripts/txtToCsv.py {input} {output}"
+        "python {input.script} {input.score} {output}"
+
 
 # maybe change input
 rule merge_csv_tables:
     input:
-        "files/scored/{cadd_version}_{genome_release}_Score.csv.gz",
-        "files/preparation/{genome_release}_vs_specific_attributes.csv.gz"
+        "results/scored/{cadd_version}_{genome_release}_Score.csv.gz",
+        "resources/initial_file/variant_summary_GRCh38.csv.gz",
     output:
-        "files/full_tables/{cadd_version}_{genome_release}_full_table.csv.gz"
+        "results/full_tables/{cadd_version}_{genome_release}_full_table.csv.gz",
     shell:
         """
-        python Kreidefelsen/scripts/merge_csv_tables.py {input[0]} {input[1]} {output}.tmp
+        python scripts/merge_csv_tables.py {input[0]} {input[1]} {output}.tmp
         gzip -c {output}.tmp > {output}
         rm {output}.tmp
         """
