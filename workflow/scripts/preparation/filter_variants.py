@@ -1,10 +1,9 @@
 import pandas as pd
 import sys
 
+
 def filter_variants(csv_input, csv_output, chunksize=1000):
-    # Open the output file in write mode first to add the header
     with open(csv_output, 'w', newline='') as outfile:
-        # Write header using the first chunk
         for i, chunk in enumerate(pd.read_csv(csv_input, chunksize=chunksize)):
             # Filter rows based on 'ReviewStatus'
             filtered_chunk = chunk[
@@ -19,9 +18,10 @@ def filter_variants(csv_input, csv_output, chunksize=1000):
             else:
                 filtered_chunk.to_csv(outfile, index=False, mode='a', header=False)
 
+
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python filter_variants.py <input_csv> <output_csv>")
+        print("Usage: python filter_variants.py <csv_input> <csv_output>")
         sys.exit(1)
     
     csv_input = sys.argv[1]

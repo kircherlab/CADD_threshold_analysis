@@ -16,7 +16,7 @@ def txtToCsv(txt_input, csv_output, chunksize=1000):
 
 if __name__ == "__main__":
     if len(sys.argv) != 3:
-        print("Usage: python txtToCsv.py <input_csv> <output_csv>, not 3 arguments.")
+        print("Usage: python txtToCsv.py <txt_input> <csv_output>.")
         sys.exit(1)
 
     txt_input = sys.argv[1]
