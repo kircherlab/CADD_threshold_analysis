@@ -18,7 +18,7 @@ def csv_to_vcf(csv_input,
         vcf_dir = os.path.join('results', 'files_for_website')
         os.makedirs(vcf_dir, exist_ok=True)
         vcf_file = os.path.join(
-            vcf_dir, f'filtered_variants_part_{file_index}.vcf.gz')
+            vcf_dir, f'vcf_for_cadd_part_{file_index}.vcf.gz')
         with gzip.open(vcf_file, 'wt') as vcf:
             # helper to find a value among candidate column names
             def get_val(r, candidates):
@@ -29,7 +29,7 @@ def csv_to_vcf(csv_input,
 
             for _, row in chunk.iterrows():
                 chrom = get_val(
-                    row, ['CHROM', 'Chrom', 'chrom', 'Chromosome', 'chromosome'])
+                    row, ['CHROM', 'Chrom', 'chrom', 'Chromosome'])
                 pos = get_val(row, ['POS', 'Pos', 'pos',
                               'PositionVCF', 'Start', 'start'])
                 ref = get_val(row, ['REF', 'Ref', 'ref',
