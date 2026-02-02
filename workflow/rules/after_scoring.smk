@@ -6,7 +6,7 @@ rule merge_tsv_files:
         or sys.exit(f"Error: No TSV files found in scored_data/{wildcards.name}/"),
         script=getScript("merge_tsv_files.py"),
     output:
-        "results/scored/{cadd_version}_{genome_release}_Score.tsv.gz",
+        "results/scored/{name}_Score.tsv.gz".format(name=config["name"]),
     shell:
         """
         python {input.script} {input.tsvs} {output}.tmp
@@ -17,10 +17,10 @@ rule merge_tsv_files:
 
 rule tsvToCsv:
     input:
-        score="results/scored/{cadd_version}_{genome_release}_Score.tsv.gz",
+        score="results/scored/{name}_Score.tsv.gz".format(name=config["name"]),
         script=getScript("txtToCsv.py"),
     output:
-        "results/scored/{cadd_version}_{genome_release}_Score.csv.gz",
+        "results/scored/{name}_Score.csv.gz".format(name=config["name"]),
     shell:
         "python {input.script} {input.score} {output}"
 
@@ -28,13 +28,14 @@ rule tsvToCsv:
 # maybe change input
 rule merge_csv_tables:
     input:
-        "results/scored/{cadd_version}_{genome_release}_Score.csv.gz",
-        "resources/initial_file/variant_summary_GRCh38.csv.gz",
+        scored="results/scored/{name}_Score.csv.gz".format(name=config["name"]),
+        old="resources/initial_file/{name}.csv.gz".format(name=config["name"]),
+        script=getScript("merge_csv_tables.py"),
     output:
-        "results/full_tables/{cadd_version}_{genome_release}_full_table.csv.gz",
+        "results/full_tables/{name}_full_table.csv.gz".format(name=config["name"]),
     shell:
         """
-        python scripts/merge_csv_tables.py {input[0]} {input[1]} {output}.tmp
+        python {input.script} {input.scored} {input.old} {output}.tmp
         gzip -c {output}.tmp > {output}
         rm {output}.tmp
         """

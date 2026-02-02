@@ -1,9 +1,9 @@
 # random duplicate dropping
 rule drop_duplicates:
     input:
-        "results/full_tables/{cadd_version}_{genome_release}_full_table.csv.gz",
+        "results/full_tables/{name}_full_table.csv.gz".format(name=config["name"]),
     output:
-        "results/full_tables/random_{cadd_version}_{genome_release}_without_duplicates.csv.gz",
+        "results/full_tables/{name}_without_duplicates.csv.gz".format(name=config["name"]),
     shell:
         """
         python Kreidefelsen/scripts/take_out_duplicates.py {input} {output}.tmp
@@ -18,9 +18,9 @@ rule drop_duplicates:
 # positive value is the value which we get when the test is positive (bsp. pathogenic)
 rule calculate_metrics:
     input:
-        "results/full_tables/random_{cadd_version}_{genome_release}_without_duplicates.csv.gz",
+        "results/full_tables/{name}_without_duplicates.csv.gz".format(name=config["name"]),
     output:
-        "results/metrics/basic_{cadd_version}_{genome_release}_{label}_{prediction}_{positive_value}_{tn}_{tr}_metrics.csv.gz",
+        "results/metrics/{name}_{label}_{prediction}_{positive_value}_{tn}_{tr}_metrics.csv.gz".format(name=config["name"], label=config["label"], prediction=config["prediction"], positive_value=config["positive_value"], tn=config["tn"], tr=config["tr"]),
     params:
         label=lambda wc: wc.label,
         prediction=lambda wc: wc.prediction,
