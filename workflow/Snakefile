@@ -7,17 +7,29 @@ include: "rules/after_scoring.smk"
 rule all:
     input:
         # build a single list of file paths; avoid inserting `None` values
-        (expand("results/preprocessing/{name}.vcf.gz", name=[config["name"]]) if "preprocessing" in config else []) +
-        expand("results/preprocessing/splits/{name}.split.done", name=[config["name"]]) +
-        (expand("results/metrics/{name}.csv.gz", name=[config["name"]]) if "metrics" in config else [])
+        (expand("results/preprocessing/splits/{name}.split.done", name=config["name"]) if "preprocessing" in config else []) +
+        (expand("results/metrics/{name}_{label}_{prediction}_{positive_value}_{threshold_steps}_{threshold_range}_metrics.csv.gz", 
+        name=config["name"], 
+        label=config["label"], 
+        prediction=config["prediction"], 
+        positive_value=config["positive_value"], 
+        threshold_steps=config["threshold_steps"], 
+        threshold_range=config["threshold_range"]
+        ) if "metrics" in config else [])
 
 
 rule all_metrics:
     input:
-        expand("results/metrics/{name}.csv.gz", name=config["name"]),
+        expand("results/metrics/{name}_{label}_{prediction}_{positive_value}_{threshold_steps}_{threshold_range}_metrics.csv.gz", 
+        name=config["name"], 
+        label=config["label"], 
+        prediction=config["prediction"], 
+        positive_value=config["positive_value"], 
+        threshold_steps=config["threshold_steps"], 
+        threshold_range=config["threshold_range"]
+        ),
 
 
 rule all_preprocessing:
     input:
-        #expand("results/preprocessing/{name}.vcf.gz", name=config["name"]),
         expand("results/preprocessing/splits/{name}.split.done", name=config["name"]),

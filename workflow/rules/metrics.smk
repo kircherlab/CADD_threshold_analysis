@@ -1,41 +1,39 @@
-# random duplicate dropping
+
 rule drop_duplicates:
     input:
-        "results/full_tables/{name}_full_table.csv.gz".format(name=config["name"]),
+        full_table="results/full_tables/{name}_full_table.csv.gz".format(name=config["name"]),
+        script=getScript("take_out_duplicates.py"),
     output:
         "results/full_tables/{name}_without_duplicates.csv.gz".format(name=config["name"]),
     shell:
         """
-        python Kreidefelsen/scripts/take_out_duplicates.py {input} {output}.tmp
+        python {input.script} {input.full_table} {output}.tmp
         gzip -c {output}.tmp > {output}
         rm {output}.tmp
         """
 
 
-# general metrics rule:
-# has a labeled column as reference
-# with thresholds from tr in tn steps calculates the metrics of the prediction columns values
-# positive value is the value which we get when the test is positive (bsp. pathogenic)
+
 rule calculate_metrics:
     input:
-        "results/full_tables/{name}_without_duplicates.csv.gz".format(name=config["name"]),
+        table = "results/full_tables/{name}_without_duplicates.csv.gz".format(name=config["name"]),
+        script=getScript("calculate_metrics.py"),
     output:
-        "results/metrics/{name}_{label}_{prediction}_{positive_value}_{tn}_{tr}_metrics.csv.gz".format(name=config["name"], label=config["label"], prediction=config["prediction"], positive_value=config["positive_value"], tn=config["tn"], tr=config["tr"]),
+        "results/metrics/{name}_{label}_{prediction}_{positive_value}_{threshold_steps}_{threshold_range}_metrics.csv.gz".format(name=config["name"], label=config["label"], prediction=config["prediction"], positive_value=config["positive_value"], threshold_steps=config["threshold_steps"], threshold_range=config["threshold_range"]),
     params:
-        label=lambda wc: wc.label,
-        prediction=lambda wc: wc.prediction,
-        positive_value=lambda wc: wc.positive_value,
-        tn=lambda wc: wc.tn,
-        tr=lambda wc: wc.tr,
+        label=config["label"],
+        prediction=config["prediction"],
+        positive_value=config["positive_value"],
+        threshold_steps=config["threshold_steps"],
+        threshold_range=config["threshold_range"],
     shell:
         """
-        python Kreidefelsen/scripts/calculate_metrics.py --input {input} --output {output}.tmp \
+        python {input.script} --input {input.table} --output {output}.tmp \
         --label-column "{params.label}" \
-        --prediction-column "{params.prediction}" \
+        --pred-column "{params.prediction}" \
         --positive-value "{params.positive_value}" \
-        --thresholds-number "{params.tn}" \
-        --thresholds-range "{params.tr}"
-
+        --thresholds-number "{params.threshold_steps}" \
+        --thresholds-range "{params.threshold_range}"
         gzip -c {output}.tmp > {output}
         rm {output}.tmp
         """

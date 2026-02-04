@@ -17,6 +17,6 @@ def getCondaEnv(name):
     return getWorkflowFile(ENVS_DIR, name)
 
 
-def after_scoring_find_tsv_files(wildcards):
+def after_scoring_find_tsv_files():
     import glob
-    return glob.glob(f"scored_data/{wildcards.name}/*.tsv.gz")
+    return glob.glob(f"resources/scored/*.tsv.gz")

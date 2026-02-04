@@ -1,3 +1,8 @@
 name: variant_summary_GRCh38
+label: ClinicalSignificance
+prediction: PHRED
+positive_value: pathogenic
+threshold_steps: 1
+threshold_range: 100
 preprocessing_input: resources/initial_file/variant_summary_GRCh38.csv.gz
-metrics_input: /path/to/file.tsv
+
