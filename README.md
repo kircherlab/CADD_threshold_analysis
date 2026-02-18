@@ -2,16 +2,16 @@
 
 This project will help you prepare vcf files for CADD from a given file (preprocessing) and then will calculate the metrics used in the website from the scored cadd files (metrics).
 
-# Things to do first 
+# Things to do first
 
-1. first workflow = preprocessing
+# Workflows
+## first workflow = preprocessing
 - relevant rule files: preperation.smk and common.smk
 - You need an initial file which should have the columns: CHROM, POS, REF and ALT and a column for the known Clinical Significance (eg. pathogenic and benign) of the variants. The columns CHROM, POS, REF, ALT need to be called exactly that.
 
 - the initial file needs to be put into the resources/initial_file folder
 
-# bash command for changing the column names on the ClinVar example,
-# change "variant_summary.txt.gz" for your file name and the column names for your column names:
+###### bash command for changing the column names on the ClinVar example, change "variant_summary.txt.gz" for your file name and the column names for your column names:
 
 ```bash
 
@@ -34,7 +34,7 @@ NR==1 {
 ```
 - if you want you can additionally filter your initial file (genome-release, clinicalsignificance, quality)
 
-# example filtering for the ClinVar file: (keeping only entries with a ClinicalSignificance that contains pathogenic and benign, keeping only entries with 2 stars or more in the Review, sorting the entries into GRCh37 and GRCh38)
+##### example filtering for the ClinVar file: (keeping only entries with a ClinicalSignificance that contains pathogenic and benign, keeping only entries with 2 stars or more in the Review, sorting the entries into GRCh37 and GRCh38)
 
 ```bash
 gzip -dc resources/initial_file/variant_summary_renamed.csv.gz \
@@ -53,7 +53,7 @@ snakemake -c 1 preprocessing
 - then the vcf files for cadd will be created (saved under results/files_for_website)
 - you can now upload your files to be scored by CADD
 
-2. second workflow - metrics
+## second workflow - metrics
 - put the files that have been scored by cadd into the resources/scored folder
 - now run snakemake:
 
