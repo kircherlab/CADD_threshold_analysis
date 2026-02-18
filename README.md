@@ -73,6 +73,7 @@ snakemake -c 1 all_metrics
 
 
 
+
 tail -n +2 /home/corale/CADD_Threshold_Analysis_Snakemake/results/after_scoring/1.7_GRCh38_Score.tsv.gz | split -n l/4 - split_
 for f in split_*; do (head -n1 /home/corale/CADD_Threshold_Analysis_Snakemake/results/after_scoring/1.7_GRCh38_Score.tsv.gz && cat "$f") > "${f}.tsv"; rm "$f"; done
 
