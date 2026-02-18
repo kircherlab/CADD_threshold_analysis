@@ -1,0 +1,13 @@
+name: cadd-pipeline-minimal
+channels:
+  - conda-forge
+  - bioconda
+dependencies:
+  - python=3.10
+  - snakemake
+  - pandas
+  - click
+  - scikit-learn
+  - pyyaml
+  - miller
+  - pip

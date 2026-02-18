@@ -1,25 +1,51 @@
 # README
 
-This project will help you prepare vcf files for CADD from a given file (preprocessing) and then will calculate the metrics used in the website from the scored cadd files (metrics).
+This project will help you prepare vcf files for CADD from a given file (preprocessing) and then will calculate the metrics used in the website from the scored CADD files (metrics).
 
-# Things to do first
+# CADD Threshold Analysis (Snakemake)
 
-# Workflows
-## first workflow = preprocessing
-- relevant rule files: preperation.smk and common.smk
-- You need an initial file which should have the columns: CHROM, POS, REF and ALT and a column for the known Clinical Significance (eg. pathogenic and benign) of the variants. The columns CHROM, POS, REF, ALT need to be called exactly that.
+A Snakemake pipeline to prepare variant input files for CADD scoring, merge scored outputs, and compute metrics comparing Clinical Significance labels to CADD PHRED scores.
 
-- the initial file needs to be put into the resources/initial_file folder
+**Summary**
+- Preprocess input variant tables into sorted VCFs suitable for CADD.
+- Upload VCFs to [CADD](https://cadd.bihealth.org/score) or score locally.
+- Merge scored outputs and compute metrics `('Threshold', 'TrueNegatives', 'FalsePositives', 'FalseNegatives','TruePositives', 'Precision', 'Recall', 'F1Score', 'F2Score','Support', 'Accuracy', 'BalancedAccuracy', 'FalsePositiveRate','Specifity')` across PHRED thresholds.
 
-###### bash command for changing the column names on the ClinVar example, change "variant_summary.txt.gz" for your file name and the column names for your column names:
+**Requirements**
+- Snakemake (6.x+ recommended)
+- conda (optional, for `--use-conda`)
+- mlr (Miller)
+- gzip, awk, sort, coreutils
+- samtools, bcftools, tabix (if working with VCF/BCF directly)
+
+See `workflow/envs/snakemake.yaml` for a recommended conda environment.
+
+## Installation
+
+Create the recommended conda environment (optional):
 
 ```bash
+conda env create -f workflow/envs/snakemake.yaml
+conda activate snakemake-env
+```
 
+Or install Snakemake and tools using your system package manager.
+
+## Configuration
+- Edit `config/config.yaml` to adjust dataset-specific parameters, thresholds, and paths used by the pipeline.
+
+## Input requirements
+- Place your initial input files in `resources/initial_file/`.
+- The pipeline expects a table with these columns (names must match exactly): `CHROM`, `POS`, `REF`, `ALT`.
+- A column containing clinical labels (for example `ClinicalSignificance`) is required for computing metrics. Each entry needs to contain either the negative or the positive value (e.g: `benign`, `pathogenic`).
+
+If your source file uses different column names (e.g., ClinVar), rename columns first. Example (ClinVar -> required names):
+
+```bash
 gzip -dc resources/initial_file/variant_summary.txt.gz \
-| awk -F'\t' -v OFS='\t' '
+  | awk -F'\t' -v OFS='\t' '
 NR==1 {
-  for(i=1;i<=NF;i++){
-    h=$i; gsub(/^"|"$/,"",h)
+  for(i=1;i<=NF;i++){ h=$i; gsub(/^"|"$/,"",h)
     if(h=="Chromosome") $i="CHROM"
     if(h=="PositionVCF") $i="POS"
     if(h=="ReferenceAlleleVCF") $i="REF"
@@ -27,60 +53,62 @@ NR==1 {
   }
   print; next
 }
-{ print }
-' \
-| gzip -c > resources/initial_file/variant_summary_renamed.csv.gz
-
+{ print }' \
+  | gzip -c > resources/initial_file/variant_summary_renamed.csv.gz
 ```
-- if you want you can additionally filter your initial file (genome-release, clinicalsignificance, quality)
 
-##### example filtering for the ClinVar file: (keeping only entries with a ClinicalSignificance that contains pathogenic and benign, keeping only entries with 2 stars or more in the Review, sorting the entries into GRCh37 and GRCh38)
+Example filtering for Clinvar (filter by Clinical Significance, Review Status (quality) and split into the two Genome Releases):
 
 ```bash
 gzip -dc resources/initial_file/variant_summary_renamed.csv.gz \
-| mlr --tsv filter 'tolower($ReviewStatus) =~ "criteria provided, multiple submitters, no conflicts|reviewed by expert panel|practice guideline" && (tolower($ClinicalSignificance) =~ "pathogenic" || tolower($ClinicalSignificance) =~ "benign")' \
-| tee >(mlr --tsv filter '$Assembly=="GRCh38"' | gzip -c > resources/initial_file/variant_summary_GRCh38.csv.gz) \
-      >(mlr --tsv filter '$Assembly=="GRCh37"' | gzip -c > resources/initial_file/variant_summary_GRCh37.csv.gz) \
-| gzip -c > resources/initial_file/variant_summary_filtered_master.csv.gz
+  | mlr --tsv filter 'tolower($ReviewStatus) =~ "criteria provided, multiple submitters, no conflicts|reviewed by expert panel|practice guideline" && (tolower($ClinicalSignificance) =~ "pathogenic" || tolower($ClinicalSignificance) =~ "benign")' \
+  | tee >(mlr --tsv filter '$Assembly=="GRCh38"' | gzip -c > resources/initial_file/variant_summary_GRCh38.csv.gz) \
+        >(mlr --tsv filter '$Assembly=="GRCh37"' | gzip -c > resources/initial_file/variant_summary_GRCh37.csv.gz) \
+  | gzip -c > resources/initial_file/variant_summary_filtered_master.csv.gz
 ```
 
-- then you need to run snakemake:
+## Workflows
+
+### 1) Preprocessing
+- Purpose: convert input table to sorted VCFs ready for CADD.
+- Relevant rules: `preparation.smk`, `common.smk`.
+- Run:
 
 ```bash
 snakemake -c 1 preprocessing
-``` 
-- the file will be sorted by chromosome and position (saved under results/preprocessing)
-- then the vcf files for cadd will be created (saved under results/files_for_website)
-- you can now upload your files to be scored by CADD
+```
 
-## second workflow - metrics
-- put the files that have been scored by cadd into the resources/scored folder
-- now run snakemake:
+- Outputs:
+  - `results/preprocessing/` - sorted/normalized intermediate files
+  - `results/files_for_website/` - VCFs to upload to CADD or to score locally
+
+### 2) Scoring with CADD
+- Upload VCFs in `results/files_for_website/` to CADD web service or score locally with CADD.
+- Place resulting scored files into `resources/scored/`.
+
+### 3) Metrics
+- Purpose: merge scored output with original clinical labels and compute metrics over PHRED thresholds.
+- Relevant rules: `after_scoring.smk`, `metrics.smk`, `common.smk`.
+- Run:
 
 ```bash
 snakemake -c 1 all_metrics
-``` 
-- relevant rule files: after_scoring.smk and common.smk
-- all the scored files will be merged into one file and transformed into csv files which can be found under results/after_scoring/
-- then the new files will be merged with the original table, so we have the Clinical Significance and PHRED score in one file, which we need for the metrics, this newly merged table can be found under results/full_tables/
-- relevant rule files: metrics.smk and common.smk
-- then all duplicate entries that we got from scoring with CADD will be dropped (results/full_tables/) and the metrics will be calculated by comparing the Clinical Significance and the PHRED Score (results/metrics/)
+```
 
-# the last two files can be used for the website
+- Outputs:
+  - `results/after_scoring/` - merged/converted scored outputs
+  - `results/full_tables/` - merged tables including clinical labels + PHRED scores, merged table without duplicates
+  - `results/metrics/` - computed metrics across thresholds
+
+## Environment
+- A recommended conda environment is provided at `workflow/envs/snakemake.yaml`.
+- Use `snakemake --use-conda` to let Snakemake create per-rule environments if rule-specific envs are present.
+
+## Contributing
+- Please open issues or pull requests. Include minimal reproducible examples for bugs.
+
+## License
+- See the `LICENSE` file in the project root.
+- For questions contact the repository maintainers.
 
 
-
-
-
-
-
-tail -n +2 /home/corale/CADD_Threshold_Analysis_Snakemake/results/after_scoring/1.7_GRCh38_Score.tsv.gz | split -n l/4 - split_
-for f in split_*; do (head -n1 /home/corale/CADD_Threshold_Analysis_Snakemake/results/after_scoring/1.7_GRCh38_Score.tsv.gz && cat "$f") > "${f}.tsv"; rm "$f"; done
-
-
-zcat results/files_for_website/filtered_variants_part_4.vcf.gz | sort -k1,1 -k2,2n 
-
-# general metrics rule:
-# has a labeled column as reference
-# with thresholds from tr in tn steps calculates the metrics of the prediction columns values
-# positive value is the value which we get when the test is positive (bsp. pathogenic)
