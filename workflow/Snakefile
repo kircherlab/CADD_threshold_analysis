@@ -30,6 +30,6 @@ rule all_metrics:
         ),
 
 
-rule all_preprocessing:
+rule preprocessing:
     input:
         expand("results/preprocessing/splits/{name}.split.done", name=config["name"]),

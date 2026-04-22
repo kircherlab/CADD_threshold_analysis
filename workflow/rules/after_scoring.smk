@@ -2,8 +2,11 @@
 
 rule merge_tsv_files:
     input:
-        tsvs=after_scoring_find_tsv_files()
-        or sys.exit(f"Error: No TSV files found in resources/scored/"),
+        # Delay glob evaluation until the rule is actually invoked so
+        # parsing the workflow doesn't abort when the directory is empty.
+        tsvs=lambda wildcards: after_scoring_find_tsv_files() or sys.exit(
+            "Error: No TSV files found in resources/scored/"
+        ),
         script=getScript("merge_tsv_files.py"),
     output:
         "results/after_scoring/{name}_Score.tsv.gz".format(name=config["name"]),
