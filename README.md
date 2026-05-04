@@ -33,6 +33,9 @@ Or install Snakemake and tools using your system package manager.
 
 ## Configuration
 - Edit `config/config.yaml` to adjust dataset-specific parameters, thresholds, and paths used by the pipeline.
+- Write the path and name of the initial file in `preprocessing_input`
+- Edit `name` and choose an identifier name for the files before scoring (e.g. variant_summary_GRCh38), can be anything
+- Edit `name_scored` with the beginning of your scored files (e.g. GRCh38-v1.7), NEEDS to be the beginning of the scored files you want to merge and calculate metrics from
 
 ## Input requirements
 - Place your initial input files in `resources/initial_file/`.
