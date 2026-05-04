@@ -9,7 +9,7 @@ rule merge_tsv_files:
         ),
         script=getScript("merge_tsv_files.py"),
     output:
-        "results/after_scoring/{name}_Score.tsv.gz".format(name=config["name"]),
+        "results/after_scoring/{name_scored}_Score.tsv.gz".format(name_scored=config["name_scored"]),
     shell:
         """
         python {input.script} {input.tsvs} {output}.tmp
@@ -20,9 +20,9 @@ rule merge_tsv_files:
 
 rule tsvToCsv:
     input:
-        score="results/after_scoring/{name}_Score.tsv.gz".format(name=config["name"]),
+        score="results/after_scoring/{name_scored}_Score.tsv.gz".format(name_scored=config["name_scored"]),
     output:
-        "results/after_scoring/{name}_Score.csv.gz".format(name=config["name"]),
+        "results/after_scoring/{name_scored}_Score.csv.gz".format(name_scored=config["name_scored"]),
     shell:
         """
         gunzip -c {input.score} \
@@ -33,11 +33,11 @@ rule tsvToCsv:
 
 rule merge_csv_tables:
     input:
-        scored="results/after_scoring/{name}_Score.csv.gz".format(name=config["name"]),
+        scored="results/after_scoring/{name_scored}_Score.csv.gz".format(name_scored=config["name_scored"]),
         old="resources/initial_file/{name}.csv.gz".format(name=config["name"]),
         script=getScript("merge_csv_tables.py"),
     output:
-        "results/full_tables/{name}_full_table.csv.gz".format(name=config["name"]),
+        "results/full_tables/{name_scored}_full_table.csv.gz".format(name_scored=config["name_scored"]),
     shell:
         """
         python {input.script} {input.scored} {input.old} {output}.tmp

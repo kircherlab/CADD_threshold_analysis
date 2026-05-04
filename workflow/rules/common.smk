@@ -19,4 +19,4 @@ def getCondaEnv(name):
 
 def after_scoring_find_tsv_files():
     import glob
-    return glob.glob(f"resources/scored/*.tsv.gz")
+    return glob.glob(f"resources/scored/{config['name_scored']}*.tsv.gz")

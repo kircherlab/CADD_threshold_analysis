@@ -1,8 +1,9 @@
-name: variant_summary_GRCh38
+name: variant_summary_GRCh37
+name_scored: GRCh37-v1.7
 label: ClinicalSignificance
 prediction: PHRED
 positive_value: pathogenic
 threshold_steps: 1
 threshold_range: 100
-preprocessing_input: resources/initial_file/variant_summary_GRCh38.csv.gz
+preprocessing_input: resources/initial_file/variant_summary_GRCh37.csv.gz
 

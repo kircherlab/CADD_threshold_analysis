@@ -8,8 +8,9 @@ rule all:
     input:
         # build a single list of file paths; avoid inserting `None` values
         (expand("results/preprocessing/splits/{name}.split.done", name=config["name"]) if "preprocessing" in config else []) +
-        (expand("results/metrics/{name}_{label}_{prediction}_{positive_value}_{threshold_steps}_{threshold_range}_metrics.csv.gz", 
+        (expand("results/metrics/{name_scored}_{label}_{prediction}_{positive_value}_{threshold_steps}_{threshold_range}_metrics.csv.gz", 
         name=config["name"], 
+        name_scored=config["name_scored"],
         label=config["label"], 
         prediction=config["prediction"], 
         positive_value=config["positive_value"], 
@@ -20,8 +21,8 @@ rule all:
 
 rule all_metrics:
     input:
-        expand("results/metrics/{name}_{label}_{prediction}_{positive_value}_{threshold_steps}_{threshold_range}_metrics.csv.gz", 
-        name=config["name"], 
+        expand("results/metrics/{name_scored}_{label}_{prediction}_{positive_value}_{threshold_steps}_{threshold_range}_metrics.csv.gz", 
+        name_scored=config["name_scored"],
         label=config["label"], 
         prediction=config["prediction"], 
         positive_value=config["positive_value"], 
