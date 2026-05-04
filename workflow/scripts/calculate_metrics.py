@@ -75,29 +75,21 @@ def calculate_metrics(input_file,
 
     print("Received arguments:", sys.argv)
 
+    # Read just a small sample to validate columns (avoid loading full file)
     with gzip.open(input_file, 'rt') as f1:
-        data = pd.read_csv(f1, low_memory=False)
+        sample = pd.read_csv(f1, nrows=10, low_memory=False)
 
-    if label_column not in data.columns or pred_column not in data.columns:
-        found = data.columns.tolist()
+    if label_column not in sample.columns or pred_column not in sample.columns:
+        found = sample.columns.tolist()
         raise ValueError(
             f"Input file must contain columns: \n"
             f"{label_column} and {pred_column}."
             f" Found: {found}"
         )
 
-    # map binary values to label_column
-    data[label_column] = (
-        data[label_column].str.contains(positive_value, case=False, na=False)
-    ).map({True: 'pathogenic', False: 'benign'})
-
+    # thresholds to test
     thresholds = np.arange(1, thresholds_range, step=thresholds_number)
-    print(thresholds)
-
-    # Sort data by PHRED values to make threshold comparison easier
-    data = data.sort_values(pred_column)
-    # Initialize containers to track benign and pathogenic counts
-    cumulative_benign = pd.Series([False] * len(data), index=data.index)
+    print("Using thresholds:", thresholds)
 
     header_cols = [
         'Threshold', 'TrueNegatives', 'FalsePositives', 'FalseNegatives',
@@ -108,63 +100,50 @@ def calculate_metrics(input_file,
     with open(output_file, 'w') as f:
         f.write(','.join(header_cols) + "\n")
 
+    # Process file per-threshold in chunks to avoid loading entire file into memory
+    chunksize = 100000
     for threshold in thresholds:
+        tn = fp = fn = tp = 0
+        try:
+            with gzip.open(input_file, 'rt') as f:
+                for chunk in pd.read_csv(f, chunksize=chunksize, low_memory=False):
+                    # ensure column is string-like for contains
+                    chunk[label_column] = (
+                        chunk[label_column].astype(str)
+                        .str.contains(positive_value, case=False, na=False)
+                    ).map({True: 'pathogenic', False: 'benign'})
 
-        current_benign = data[pred_column] <= threshold
-        cumulative_benign |= current_benign  # Update cumulative benign tracker
+                    preds = np.where(chunk[pred_column] <= threshold, 'benign', 'pathogenic')
 
-        # Update binary predictions
-        data["binary_prediction"] = np.where(
-            cumulative_benign, "benign", "pathogenic")
+                    tp += int(((chunk[label_column] == 'pathogenic') & (preds == 'pathogenic')).sum())
+                    tn += int(((chunk[label_column] == 'benign') & (preds == 'benign')).sum())
+                    fp += int(((chunk[label_column] == 'benign') & (preds == 'pathogenic')).sum())
+                    fn += int(((chunk[label_column] == 'pathogenic') & (preds == 'benign')).sum())
+        except MemoryError:
+            print('MemoryError: try increasing swap or reducing chunksize', file=sys.stderr)
+            raise
 
-        # calculate metrics
-        tn, fp, fn, tp = (
-            confusion_matrix(
-                data[label_column],
-                data['binary_prediction'],
-                labels=['benign', 'pathogenic'],
-            )
-            .ravel()
-        )
-        precision = precision_score(
-            data[label_column],
-            data['binary_prediction'],
-            pos_label='pathogenic',
-            zero_division=0
-        )
-        recall = recall_score(
-            data[label_column],
-            data['binary_prediction'],
-            pos_label='pathogenic',
-            zero_division=0
-        )
-        f1 = f1_score(
-            data[label_column],
-            data['binary_prediction'],
-            pos_label='pathogenic',
-            zero_division=0
-        )
+        # compute metrics from aggregated counts
+        precision = tp / (tp + fp) if (tp + fp) > 0 else 0
+        recall = tp / (tp + fn) if (tp + fn) > 0 else 0
         if (precision + recall) > 0:
+            f1 = 2 * precision * recall / (precision + recall)
             f2 = (5 * precision * recall) / (4 * precision + recall)
         else:
-            f2 = 0
-        accuracy = accuracy_score(
-            data[label_column],
-            data['binary_prediction']
-        )
-        balanced_acc = balanced_accuracy_score(
-            data[label_column],
-            data['binary_prediction']
-        )
-        specificity = tn / (tn + fp) if (tn + fp) > 0 else 0
+            f1 = f2 = 0
+
+        total = tp + tn + fp + fn
+        accuracy = (tp + tn) / total if total > 0 else 0
+        sens = tp / (tp + fn) if (tp + fn) > 0 else 0
+        spec = tn / (tn + fp) if (tn + fp) > 0 else 0
+        balanced_acc = 0.5 * (sens + spec)
         fpr = fp / (fp + tn) if (fp + tn) > 0 else 0
         support = tp + fn
 
         row_vals = [
             threshold, tn, fp, fn, tp, precision, recall, f1, f2, support,
-            accuracy, balanced_acc, fpr, specificity,
+            accuracy, balanced_acc, fpr, spec,
         ]
-        # convert all values to strings and write a single CSV row
         with open(output_file, 'a') as f:
             f.write(','.join(map(str, row_vals)) + "\n")
 

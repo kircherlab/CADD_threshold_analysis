@@ -12,7 +12,8 @@ def merge_tsv_files(files, output_file):
         sep='\t',
         compression=comp_first,
         nrows=0,
-        skiprows=1
+        skiprows=1,
+        low_memory=False
     )
     columns = first_df.columns.tolist()
     print(columns)
@@ -25,7 +26,8 @@ def merge_tsv_files(files, output_file):
             file,
             sep='\t',
             compression=comp,
-            skiprows=1
+            skiprows=1,
+            low_memory=False
         )
         combined_df = pd.concat([combined_df, df], axis=0, ignore_index=True)
 
