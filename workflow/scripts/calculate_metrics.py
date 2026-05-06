@@ -95,7 +95,7 @@ def calculate_metrics(input_file,
         'Threshold', 'TrueNegatives', 'FalsePositives', 'FalseNegatives',
         'TruePositives', 'Precision', 'Recall', 'F1Score', 'F2Score',
         'Support', 'Accuracy', 'BalancedAccuracy', 'FalsePositiveRate',
-        'Specifity',
+        'Specificity',
     ]
     with open(output_file, 'w') as f:
         f.write(','.join(header_cols) + "\n")
