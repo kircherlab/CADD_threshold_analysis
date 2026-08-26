@@ -71,8 +71,22 @@ gzip -dc resources/initial_file/variant_summary_renamed.csv.gz \
 ```
 
 ## Workflows
-
 ### 1) Preprocessing
+```mermaid
+ flowchart TD
+    sort_input_csv("sort_input_csv") --> csv_to_vcf("csv_to_vcf")
+    csv_to_vcf --> preprocessing("preprocessing")
+
+    classDef preprocessingNode fill:#FFFFFF,stroke:#57D9C1,stroke-width:4px,stroke-dasharray:8 5,color:#000000
+    classDef csvToVcfNode fill:#FFFFFF,stroke:#BFD957,stroke-width:4px,stroke-dasharray:8 5,color:#000000
+    classDef sortInputCsvNode fill:#FFFFFF,stroke:#576ED9,stroke-width:4px,stroke-dasharray:8 5,color:#000000
+
+    class preprocessing preprocessingNode
+    class csv_to_vcf csvToVcfNode
+    class sort_input_csv sortInputCsvNode
+
+    linkStyle default stroke:#4A4A4A,stroke-width:3px
+``` 
 - Purpose: convert input table to sorted VCFs ready for CADD.
 - Relevant rules: `preparation.smk`, `common.smk`.
 - Run:
@@ -90,6 +104,29 @@ snakemake -c 1 preprocessing
 - Place resulting scored files into `resources/scored/`.
 
 ### 3) Metrics
+```mermaid
+flowchart TD
+    merge_tsv_files("merge_tsv_files") --> tsvToCsv("tsvToCsv")
+    tsvToCsv --> merge_csv_tables("merge_csv_tables")
+    merge_csv_tables --> drop_duplicates("drop_duplicates")
+    drop_duplicates --> calculate_metrics("calculate_metrics")
+    calculate_metrics --> all_metrics("all_metrics")
+
+    classDef allMetrics fill:#FFFFFF,stroke:#D98D57,stroke-width:4px,color:#000000
+    classDef calculateMetrics fill:#FFFFFF,stroke:#D9BD57,stroke-width:4px,color:#000000
+    classDef dashedNode fill:#FFFFFF,stroke-width:4px,stroke-dasharray:8 5,color:#000000
+
+    class all_metrics allMetrics
+    class calculate_metrics calculateMetrics
+    class drop_duplicates,merge_csv_tables,tsvToCsv,merge_tsv_files dashedNode
+
+    style drop_duplicates stroke:#A7D957
+    style merge_csv_tables stroke:#59D957
+    style tsvToCsv stroke:#57A5D9
+    style merge_tsv_files stroke:#57D9A5
+
+    linkStyle default stroke:#4A4A4A,stroke-width:3px
+``` 
 - Purpose: merge scored output with original clinical labels and compute metrics over PHRED thresholds.
 - Relevant rules: `after_scoring.smk`, `metrics.smk`, `common.smk`.
 - Run:
