@@ -20,6 +20,9 @@ A Snakemake pipeline to prepare variant input files for CADD scoring, merge scor
 
 See `workflow/envs/snakemake.yaml` for a recommended conda environment.
 
+**Overview**
+![Workflwow overview](overview.png)
+
 ## Installation
 
 Create the recommended conda environment (optional):
